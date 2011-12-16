@@ -1,0 +1,65 @@
+<plugin>
+	<script name="hq-phpfpm-stat">
+<![CDATA[
+#!/usr/bin/python
+
+import httplib, json
+
+conn = httplib.HTTPConnection("127.0.0.1")
+try:
+    conn.request("GET", "/fpm_status.php?json")
+    resp = conn.getresponse()
+    data = resp.read().strip()
+    statusObj = json.loads(data)
+
+    print 'Pool=%s' % statusObj['pool']
+    print 'ProcessManager=%s' % statusObj['process manager']
+    print 'StartTime=%s' % statusObj['start time']
+    print 'StartSince=%s' % statusObj['start since']
+    print 'AcceptedConn=%s' % statusObj['accepted conn']
+    print 'ListenQueue=%s' % statusObj['listen queue']
+    print 'MaxListenQueue=%s' % statusObj['max listen queue']
+    print 'ListenQueueLen=%s' % statusObj['listen queue len']
+    print 'IdleProcesses=%s' % statusObj['idle processes']
+    print 'ActiveProcesses=%s' % statusObj['active processes']
+    print 'TotalProcesses=%s' % statusObj['total processes']
+    print 'MaxActiveProcesses=%s' % statusObj['max active processes']
+    print 'MaxChildrenReached=%s' % statusObj['max children reached']
+
+finally:
+    conn.close()
+]]>
+	</script>
+	<server name="php-fpm">
+		<config>
+			<option name="process.query" description="Process Query" default="Pid.PidFile.eq=/var/run/php-fpm.pid"/>
+		</config>
+
+		<property name="HAS_BUILTIN_SERVICES" value="false"/>
+		<property name="PROC_QUERY" value="Pid.PidFile.eq=/var/run/php-fpm.pid"/>
+
+		<plugin type="autoinventory" class="org.hyperic.hq.product.DaemonDetector" />
+		<plugin type="measurement" class="org.hyperic.hq.product.MeasurementPlugin" />
+
+		<metric name="Availability" alias="Availability" template="sigar:Type=ProcState,Arg=%process.query%:State" category="AVAILABILITY" indicator="true" interval="10000"/>
+
+		<filter name="template" value="exec:timeout=10,file=pdk/work/scripts/phpfpm/hq-phpfpm-stat,exec=%exec%:${alias}"/>
+
+		<metric name="Pool" indicator="false" interval="10000"/>
+		<metric name="ProcessManager" indicator="false" interval="10000"/>
+		<metric name="StartTime" indicator="false" interval="10000"/>
+		<metric name="StartSince" indicator="true" interval="10000"/>
+		<metric name="AcceptedConn" indicator="true" interval="10000"/>
+		<metric name="ListenQueue" indicator="true" interval="10000"/>
+		<metric name="MaxListenQueue" indicator="true" interval="10000"/>
+		<metric name="ListenQueueLen" indicator="true" interval="10000"/>
+		<metric name="IdleProcesses" indicator="true" interval="10000"/>
+		<metric name="ActiveProcesses" indicator="true" interval="10000"/>
+		<metric name="TotalProcesses" indicator="true" interval="10000"/>
+		<metric name="MaxActiveProcesses" indicator="true" interval="10000"/>
+		<metric name="MaxChildrenReached" indicator="true" interval="10000"/>
+	</server>
+	<help name="php-fpm">
+		PHP-FPM Plugin
+	</help>
+</plugin>
